@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NewDayVentures
+
+An e-commerce platform for selling online course materials, PDFs, notes, sheets, and other educational resources. Built with Next.js 16, Tailwind CSS, and Framer Motion.
+
+## Features
+
+- **Store** — Browse, search, and filter courses by category and type
+- **Product Detail** — View course details, highlights, and syllabus
+- **Cart** — Slide-out cart sidebar with persistent localStorage storage
+- **Checkout** — Stripe-style payment form with card validation and auto-formatting
+- **Authentication** — Sign in / Sign up pages with Google & GitHub OAuth UI
+- **Toast Notifications** — Animated success/error/info toasts for user feedback
+- **Page Loader** — Animated progress bar on route transitions
+- **Duplicate Prevention** — Can't add the same course twice, with notification feedback
+- **Responsive** — Fully responsive design with mobile navigation menu
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Styling**: Tailwind CSS
+- **Font**: Poppins (Google Fonts)
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **State**: React Context + localStorage persistence
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+  page.tsx              # Homepage
+  layout.tsx            # Root layout with providers
+  globals.css           # Global styles
+  store/
+    page.tsx            # Store listing
+    [id]/page.tsx       # Product detail
+  checkout/page.tsx     # Checkout page
+  login/page.tsx        # Sign in
+  signup/page.tsx       # Sign up
+components/
+  Navbar.tsx            # Navigation bar
+  Footer.tsx            # Footer
+  CourseCard.tsx         # Course card component
+  CartContext.tsx        # Cart state management
+  CartSidebar.tsx        # Slide-out cart
+  ToastProvider.tsx      # Toast notification system
+  PageLoader.tsx         # Route transition loader
+```
 
-## Learn More
+## Currency
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All prices are displayed in Indian Rupees (₹).
