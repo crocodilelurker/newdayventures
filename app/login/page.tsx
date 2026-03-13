@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function SignInPage() {
     const [email, setEmail] = useState("");
@@ -15,14 +16,28 @@ export default function SignInPage() {
     const { showToast } = useToast();
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
+        try {
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false,
+            });
+
+            if (result?.error) {
+                showToast(result.error, "error");
+            } else {
+                showToast("Signed in successfully!", "success");
+                router.push("/");
+                router.refresh();
+            }
+        } catch (error) {
+            showToast("Something went wrong. Please try again.", "error");
+        } finally {
             setLoading(false);
-            showToast("Signed in successfully!", "success");
-            router.push("/");
-        }, 1500);
+        }
     };
 
     return (

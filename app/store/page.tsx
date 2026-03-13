@@ -1,18 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, ChevronDown } from "lucide-react";
+import { Search, Filter, ChevronDown, Loader2 } from "lucide-react";
 import CourseCard from "@/components/CourseCard";
-
-const allMaterials = [
-    { id: "1", title: "Advanced Data Structures & Algorithms Mastery", instructor: "Dr. Angela Yu, Coding Master", type: "Course", price: 529, rating: 4.8, students: 12504, image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80", category: "engineering" },
-    { id: "2", title: "Complete System Design Architecture Guide", instructor: "Hussein Nasser", type: "PDF Guide", price: 499, rating: 4.9, students: 34201, image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80", category: "engineering" },
-    { id: "3", title: "Machine Learning Math Essentials Bootcamp", instructor: "Krish Naik", type: "Study Notes", price: 399, rating: 4.7, students: 8904, image: "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?w=800&q=80", category: "data-science" },
-    { id: "4", title: "React & Next.js Full Stack Web Development", instructor: "Maximilian Schwarzmüller", type: "Course", price: 549, rating: 4.6, students: 45200, image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80", category: "engineering" },
-    { id: "5", title: "Business Strategy Frameworks PDF", instructor: "HBR Group", type: "PDF Guide", price: 299, rating: 4.7, students: 2100, image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80", category: "business" },
-    { id: "6", title: "UX/UI Design Principles Sheet", instructor: "Gary Simon", type: "Study Notes", price: 199, rating: 4.6, students: 1800, image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80", category: "design" },
-];
 
 const categories = [
     { id: "all", name: "All Categories" },
@@ -25,11 +16,30 @@ const categories = [
 const resourceTypes = ["All", "Course", "PDF Guide", "Study Notes"];
 
 export default function StorePage() {
+    const [materials, setMaterials] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("all");
     const [activeType, setActiveType] = useState("All");
 
-    const filteredMaterials = allMaterials.filter((item) => {
+    useEffect(() => {
+        async function fetchMaterials() {
+            try {
+                const res = await fetch("/api/materials");
+                if (res.ok) {
+                    const data = await res.json();
+                    setMaterials(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch materials:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchMaterials();
+    }, []);
+
+    const filteredMaterials = materials.filter((item: any) => {
         const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = activeCategory === "all" || item.category === activeCategory;
         const matchesType = activeType === "All" || item.type === activeType;
@@ -105,24 +115,46 @@ export default function StorePage() {
                         </div>
                     </div>
 
-                    {filteredMaterials.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredMaterials.map((material, index) => (
-                                <motion.div
-                                    key={material.id}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                >
-                                    <CourseCard {...material} />
-                                </motion.div>
-                            ))}
+                    {/* Materials Grid */}
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-24">
+                            <Loader2 className="w-12 h-12 text-pink-500 animate-spin mb-4" />
+                            <p className="text-gray-500 font-medium animate-pulse">Fetching courses...</p>
                         </div>
+                    ) : filteredMaterials.length > 0 ? (
+                        <motion.div
+                            variants={{
+                                show: {
+                                    transition: {
+                                        staggerChildren: 0.1
+                                    }
+                                }
+                            }}
+                            initial="hidden"
+                            animate="show"
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+                        >
+                            {filteredMaterials.map((material) => (
+                                <CourseCard 
+                                    key={material._id} 
+                                    id={material._id}
+                                    title={material.title}
+                                    type={material.type}
+                                    price={material.price}
+                                    rating={material.rating}
+                                    students={material.students}
+                                    image={material.image}
+                                    instructor={material.instructor}
+                                />
+                            ))}
+                        </motion.div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center bg-gray-50 rounded-2xl border border-gray-100">
-                            <Filter className="w-12 h-12 text-gray-400 mb-4" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No materials found</h3>
-                            <p className="text-gray-500 max-w-sm">We couldn't find any materials matching your applied filters. Try adjusting your search criteria.</p>
+                        <div className="text-center py-24 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Search className="w-10 h-10 text-gray-300" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No courses found</h3>
+                            <p className="text-gray-500 max-w-sm mx-auto">Try adjusting your search or filters to find what you're looking for.</p>
                             <button
                                 onClick={() => { setSearchQuery(""); setActiveCategory("all"); setActiveType("All"); }}
                                 className="mt-6 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-semibold shadow-sm rounded-full hover:bg-gray-50 hover:text-pink-600 transition-colors"

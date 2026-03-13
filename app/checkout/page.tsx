@@ -41,16 +41,40 @@ export default function CheckoutPage() {
         }
     };
 
-    const handlePayment = (e: React.FormEvent) => {
+    const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
         const err = validateExpiry(expiry);
         if (err) { setExpiryError(err); return; }
+        
         setIsProcessing(true);
-        setTimeout(() => {
+        try {
+            const res = await fetch("/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: items.map(item => ({
+                        id: item.id,
+                        title: item.title,
+                        price: item.price,
+                        type: item.type
+                    })),
+                    totalAmount: cartTotal
+                })
+            });
+
+            if (res.ok) {
+                setIsSuccess(true);
+                clearCart();
+            } else {
+                const data = await res.json();
+                alert(data.message || "Payment failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Payment error:", error);
+            alert("An error occurred during payment. Please try again.");
+        } finally {
             setIsProcessing(false);
-            setIsSuccess(true);
-            clearCart();
-        }, 2200);
+        }
     };
 
 

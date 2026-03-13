@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Star, Zap, Shield, FileText } from "lucide-react";
+import { ArrowRight, BookOpen, Star, Zap, Shield, FileText, Loader2 } from "lucide-react";
 import CourseCard from "@/components/CourseCard";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const container = {
@@ -21,48 +22,27 @@ export default function Home() {
     show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100 } },
   };
 
-  const featuredMaterials = [
-    {
-      id: "1",
-      title: "Advanced Data Structures & Algorithms Mastery",
-      instructor: "Dr. Angela Yu, Coding Master",
-      type: "Bestseller",
-      price: 529,
-      rating: 4.8,
-      students: 12504,
-      image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80",
-    },
-    {
-      id: "2",
-      title: "Complete System Design Architecture Guide",
-      instructor: "Hussein Nasser",
-      type: "Highest Rated",
-      price: 499,
-      rating: 4.9,
-      students: 34201,
-      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
-    },
-    {
-      id: "3",
-      title: "Machine Learning Math Essentials Bootcamp",
-      instructor: "Krish Naik",
-      type: "Hot & New",
-      price: 399,
-      rating: 4.7,
-      students: 8904,
-      image: "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?w=800&q=80",
-    },
-    {
-      id: "4",
-      title: "React & Next.js Full Stack Web Development",
-      instructor: "Maximilian Schwarzmüller",
-      type: "Bestseller",
-      price: 549,
-      rating: 4.6,
-      students: 45200,
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMaterials() {
+      try {
+        const res = await fetch("/api/materials");
+        if (res.ok) {
+          const data = await res.json();
+          setMaterials(data.slice(0, 3)); // show top 3
+        }
+      } catch (error) {
+        console.error("Failed to fetch featured materials:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+    fetchMaterials();
+  }, []);
+
+  const featuredMaterials = materials;
 
   return (
     <div className="overflow-hidden">
@@ -120,19 +100,30 @@ export default function Home() {
             <p className="text-gray-600 text-base">Check out what others are learning this week.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredMaterials.map((material, index) => (
-              <motion.div
-                key={material.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-              >
-                <CourseCard {...material} />
-              </motion.div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24">
+              <Loader2 className="w-10 h-10 text-pink-500 animate-spin mb-4" />
+              <p className="text-gray-500 font-medium animate-pulse text-sm uppercase tracking-widest">Loading Featured Content...</p>
+            </div>
+          ) : featuredMaterials.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredMaterials.map((material) => (
+                <CourseCard 
+                  key={material._id} 
+                  id={material._id}
+                  title={material.title}
+                  type={material.type}
+                  price={material.price}
+                  rating={material.rating}
+                  students={material.students}
+                  image={material.image}
+                  instructor={material.instructor}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">No featured materials available.</div>
+          )}
         </div>
       </section>
 

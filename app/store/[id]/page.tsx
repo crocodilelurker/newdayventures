@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -10,51 +10,50 @@ import {
 import { useCart } from "@/components/CartContext";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
-
-
-const getMaterialDetails = (id: string) => {
-    return {
-        id,
-        title: "Advanced Data Structures & Algorithms Mastery",
-        instructor: "Dr. Angela Yu, Coding Master",
-        type: "Course Bundle",
-        price: 529,
-        rating: 4.8,
-        reviews: 328,
-        students: 12504,
-        image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=1200&q=80",
-        description: "Master the most critical data structures and algorithms required to ace top-tier coding interviews. This comprehensive bundle goes beyond theory, giving you practical implementations, pattern recognition techniques, and deep-dive explanations for complex topics.",
-        highlights: [
-            "120+ High-quality video explanations",
-            "50+ Interactive coding exercises",
-            "Comprehensive PDF notes for offline study",
-            "Lifetime access & free updates"
-        ],
-        syllabus: [
-            "Arrays, Strings & 2D Matrices",
-            "HashMaps & Sets Deep Dive",
-            "Linked Lists & Fast/Slow Pointers",
-            "Stacks, Queues & Monotonic Stacks",
-            "Trees, Tries & Graph Algorithms",
-            "Dynamic Programming Patterns",
-        ]
-    };
-};
+import { Loader2 } from "lucide-react";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const material = getMaterialDetails(id);
+    const [material, setMaterial] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
     const { addToCart, isInCart } = useCart();
     const { showToast } = useToast();
     const router = useRouter();
-    const alreadyInCart = isInCart(material.id);
+
+    useEffect(() => {
+        async function fetchMaterial() {
+            try {
+                const res = await fetch(`/api/materials/${id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMaterial(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch material:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchMaterial();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-pink-500 animate-spin mb-4" />
+                <p className="text-gray-500 font-medium animate-pulse">Loading course details...</p>
+            </div>
+        );
+    }
 
     if (!material) return <div className="p-20 text-center text-gray-600">Product not found</div>;
 
+    const alreadyInCart = isInCart(material._id || material.id);
+
     const handleAddToCart = () => {
         const success = addToCart({
-            id: material.id,
+            id: material._id || material.id,
             title: material.title,
             price: material.price,
             image: material.image,
@@ -69,7 +68,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
     const handleBuyNow = () => {
         addToCart({
-            id: material.id,
+            id: material._id || material.id,
             title: material.title,
             price: material.price,
             image: material.image,
@@ -134,7 +133,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                             ))}
                         </div>
                         <span className="font-bold text-amber-700">{material.rating}</span>
-                        <span className="text-sm text-gray-500">({material.reviews} reviews) • {material.students.toLocaleString()} students</span>
+                        <span className="text-sm text-gray-500">({material.reviews || 0} reviews) • {(material.students || 0).toLocaleString()} students</span>
                     </div>
 
                     <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight text-gray-900">{material.title}</h1>
@@ -142,7 +141,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
                     <div className="flex items-center gap-4 mb-8">
                         <span className="text-4xl font-black text-gray-900">
-                            ₹{material.price.toLocaleString('en-IN')}
+                            ₹{(material.price || 0).toLocaleString('en-IN')}
                         </span>
                     </div>
 
@@ -151,7 +150,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </p>
 
                     <div className="space-y-4 mb-10">
-                        {material.highlights.map((highlight, index) => (
+                        {(material.highlights || []).map((highlight: any, index: number) => (
                             <div key={index} className="flex items-start gap-3">
                                 <CheckCircle2 className="w-5 h-5 text-gray-800 shrink-0 mt-0.5" />
                                 <span className="text-gray-700">{highlight}</span>
@@ -193,7 +192,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             <div className="border border-gray-200 bg-white shadow-sm rounded-2xl p-8 md:p-12 mb-20 max-w-4xl mx-auto">
                 <h2 className="text-2xl font-extrabold mb-8 text-gray-900">Course Curriculum</h2>
                 <div className="space-y-3">
-                    {material.syllabus.map((item, index) => (
+                    {(material.syllabus || []).map((item: any, index: number) => (
                         <motion.div
                             key={index}
                             initial={{ opacity: 0, y: 10 }}
@@ -216,3 +215,4 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         </div>
     );
 }
+
