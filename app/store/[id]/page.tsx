@@ -17,6 +17,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     const [material, setMaterial] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
+    const [ratingLoading, setRatingLoading] = useState(false);
+    const [userRating, setUserRating] = useState<number | null>(null);
     const { addToCart, isInCart } = useCart();
     const { showToast } = useToast();
     const router = useRouter();
@@ -76,6 +78,33 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         });
         router.push("/checkout");
     };
+    const handleRating = async (score: number) => {
+        setRatingLoading(true);
+        try {
+            const res = await fetch(`/api/materials/${id}/rate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ score })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMaterial({ ...material, rating: data.rating, reviews: data.reviews });
+                setUserRating(score);
+                showToast("Rating submitted successfully!", "success");
+            } else if (res.status === 401) {
+                showToast("Please log in to rate this course.", "error");
+            } else {
+                const data = await res.json();
+                showToast(data.message || "Failed to submit rating", "error");
+            }
+        } catch (error) {
+            console.error("Rating error:", error);
+            showToast("An error occurred while rating.", "error");
+        } finally {
+            setRatingLoading(false);
+        }
+    };
 
     return (
         <div className="container mx-auto px-6 md:px-12 py-10 bg-white min-h-screen">
@@ -85,8 +114,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </Link>
 
             <div className="flex flex-col lg:flex-row gap-12 mb-20">
-
-                {/* Left Column - Image & Visuals */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -119,21 +146,25 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                         </div>
                     </div>
                 </motion.div>
-
-                {/* Right Column - Details & Action */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="lg:w-1/2 flex flex-col"
                 >
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-3 mb-4">
                         <div className="flex space-x-1">
-                            {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-4 h-4 ${i < Math.floor(material.rating) ? 'fill-amber-400 text-amber-500' : 'text-gray-200 fill-gray-200'}`} />
-                            ))}
+                            {[1, 2, 3, 4, 5].map((star) => {
+                                const roundedRating = material.rating ? Math.round(material.rating) : 0;
+                                return (
+                                    <Star 
+                                        key={star} 
+                                        className={`w-5 h-5 ${star <= roundedRating ? 'fill-amber-400 text-amber-500' : 'text-gray-200 fill-gray-200'}`} 
+                                    />
+                                );
+                            })}
                         </div>
-                        <span className="font-bold text-amber-700">{material.rating}</span>
-                        <span className="text-sm text-gray-500">({material.reviews || 0} reviews) • {(material.students || 0).toLocaleString()} students</span>
+                        <span className="font-bold text-lg text-amber-700">{material.rating ? material.rating.toFixed(1) : "0.0"}</span>
+                        <span className="text-sm text-gray-500 font-medium">({material.reviews || 0} reviews) • {(material.students || 0).toLocaleString()} students</span>
                     </div>
 
                     <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight text-gray-900">{material.title}</h1>
@@ -187,8 +218,25 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </div>
                 </motion.div>
             </div>
-
-            {/* Syllubus / Content Section */}
+            <div className="border border-gray-200 bg-white shadow-sm rounded-2xl p-8 my-16 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="text-center sm:text-left">
+                    <h2 className="text-xl font-extrabold text-gray-900 mb-1">Rate this Course</h2>
+                    <p className="text-gray-500 text-sm">Your feedback helps other students choose the right learning path.</p>
+                </div>
+                <div className="flex space-x-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                            key={star}
+                            disabled={ratingLoading}
+                            onClick={() => handleRating(star)}
+                            className="focus:outline-none disabled:opacity-50 transition-transform hover:scale-110 active:scale-95 group"
+                            title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        >
+                            <Star className={`w-10 h-10 transition-colors ${userRating && star <= userRating ? 'fill-amber-400 text-amber-500' : 'text-gray-200 fill-gray-200'} group-hover:fill-amber-300 group-hover:text-amber-400`} />
+                        </button>
+                    ))}
+                </div>
+            </div>
             <div className="border border-gray-200 bg-white shadow-sm rounded-2xl p-8 md:p-12 mb-20 max-w-4xl mx-auto">
                 <h2 className="text-2xl font-extrabold mb-8 text-gray-900">Course Curriculum</h2>
                 <div className="space-y-3">

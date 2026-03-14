@@ -12,6 +12,7 @@ export interface IMaterial extends Document {
     category: string;
     description: string;
     highlights: string[];
+    ratings?: { userId: mongoose.Types.ObjectId; score: number }[];
     syllabus: string[];
     accessLink?: string;
     createdAt: Date;
@@ -37,6 +38,12 @@ const MaterialSchema = new Schema<IMaterial>(
         highlights: [{ type: String }],
         syllabus: [{ type: String }],
         accessLink: { type: String, default: "" },
+        ratings: [
+            {
+                userId: { type: Schema.Types.ObjectId, ref: 'User' },
+                score: { type: Number, required: true, min: 1, max: 5 }
+            }
+        ]
     },
     {
         timestamps: true,

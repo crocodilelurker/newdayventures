@@ -6,12 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Menu, X, Search, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useCart } from "@/components/CartContext";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
     const { data: session } = useSession();
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { items, setIsCartOpen } = useCart();
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         const handleScroll = () => {
@@ -22,6 +25,14 @@ export default function Navbar() {
     }, []);
 
     const isAdmin = (session?.user as any)?.role === "admin";
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/store?search=${encodeURIComponent(searchQuery.trim())}`);
+            setMobileMenuOpen(false);
+        }
+    };
 
     return (
         <motion.header
@@ -38,20 +49,18 @@ export default function Navbar() {
                     <img src="/icon.svg" alt="NewDayVentures" className="w-8 h-8" />
                     <span className="text-2xl font-bold tracking-tight text-gray-900">NewDay<span className="text-pink-500 font-medium">Ventures</span></span>
                 </Link>
-
-                {/* Search Bar - Desktop */}
                 <div className="hidden md:flex flex-1 max-w-2xl px-8">
-                    <div className="relative w-full">
+                    <form onSubmit={handleSearchSubmit} className="relative w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search for anything..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all text-gray-800 placeholder:text-gray-400 font-medium"
                         />
-                    </div>
+                    </form>
                 </div>
-
-                {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-6 shrink-0">
                     {!isAdmin && (
                         <>
@@ -125,14 +134,16 @@ export default function Navbar() {
                         className="md:hidden bg-white border-b border-gray-100 overflow-hidden shadow-xl"
                     >
                         <div className="px-6 py-4 flex flex-col gap-4">
-                            <div className="relative w-full mb-2">
+                            <form onSubmit={handleSearchSubmit} className="relative w-full mb-2">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search for anything..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all text-gray-800"
                                 />
-                            </div>
+                            </form>
                             {!isAdmin && (
                                 <Link href="/store" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium text-gray-700 hover:text-pink-600">Store</Link>
                             )}

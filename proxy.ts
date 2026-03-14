@@ -6,13 +6,9 @@ export default withAuth(
         const isAdminPath = req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/api/admin');
         const isApiPath = req.nextUrl.pathname.startsWith('/api');
         const role = req.nextauth.token?.role;
-
-        // Redirect Admin away from public routes
         if (role === "admin" && !isAdminPath && !isApiPath) {
             return NextResponse.redirect(new URL('/admin', req.url));
         }
-
-        // Protect admin paths from non-admins
         if (isAdminPath && role !== "admin") {
             return NextResponse.redirect(new URL('/', req.url));
         }
@@ -21,8 +17,6 @@ export default withAuth(
         callbacks: {
             authorized: ({ token, req }) => {
                 const { pathname } = req.nextUrl;
-                
-                // Routes that REQUIRE authentication
                 const isProtectedRoute = 
                     pathname.startsWith("/checkout") || 
                     pathname.startsWith("/profile") ||
@@ -35,8 +29,6 @@ export default withAuth(
                 if (isProtectedRoute) {
                     return !!token;
                 }
-                
-                // All other routes are public (including non-existent routes that should show 404)
                 return true;
             },
         },

@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { Search, Filter, ChevronDown, Loader2 } from "lucide-react";
 import CourseCard from "@/components/CourseCard";
 
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
 const categories = [
     { id: "all", name: "All Categories" },
     { id: "engineering", name: "Software Engineering" },
@@ -15,17 +18,41 @@ const categories = [
 
 const resourceTypes = ["All", "Course", "PDF Guide", "Study Notes"];
 
-export default function StorePage() {
+function StoreContent() {
+    const searchParams = useSearchParams();
+    const initialSearch = searchParams.get("search") || "";
+
     const [materials, setMaterials] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [activeCategory, setActiveCategory] = useState("all");
     const [activeType, setActiveType] = useState("All");
 
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialSearch);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 500); 
+
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+    useEffect(() => {
+        const urlSearch = searchParams.get("search") || "";
+        if (urlSearch !== debouncedSearchQuery) {
+            setSearchQuery(urlSearch);
+        }
+    }, [searchParams]);
+
     useEffect(() => {
         async function fetchMaterials() {
+            setLoading(true);
             try {
-                const res = await fetch("/api/materials");
+                const params = new URLSearchParams();
+                if (activeCategory !== "all") params.append("category", activeCategory);
+                if (activeType !== "All") params.append("type", activeType);
+                if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
+
+                const res = await fetch(`/api/materials?${params.toString()}`);
                 if (res.ok) {
                     const data = await res.json();
                     setMaterials(data);
@@ -37,20 +64,12 @@ export default function StorePage() {
             }
         }
         fetchMaterials();
-    }, []);
-
-    const filteredMaterials = materials.filter((item: any) => {
-        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = activeCategory === "all" || item.category === activeCategory;
-        const matchesType = activeType === "All" || item.type === activeType;
-        return matchesSearch && matchesCategory && matchesType;
-    });
+    }, [activeCategory, activeType, debouncedSearchQuery]);
 
     return (
         <div className="container mx-auto px-6 md:px-12 py-12 bg-white min-h-screen">
             <div className="flex flex-col md:flex-row gap-10">
 
-                {/* Sidebar Filters */}
                 <aside className="w-full md:w-64 flex flex-col gap-8 shrink-0">
                     <div>
                         <h2 className="text-lg font-bold mb-3 text-gray-900">Search</h2>
@@ -121,7 +140,7 @@ export default function StorePage() {
                             <Loader2 className="w-12 h-12 text-pink-500 animate-spin mb-4" />
                             <p className="text-gray-500 font-medium animate-pulse">Fetching courses...</p>
                         </div>
-                    ) : filteredMaterials.length > 0 ? (
+                    ) : materials.length > 0 ? (
                         <motion.div
                             variants={{
                                 show: {
@@ -134,7 +153,7 @@ export default function StorePage() {
                             animate="show"
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
                         >
-                            {filteredMaterials.map((material) => (
+                            {materials.map((material: any) => (
                                 <CourseCard 
                                     key={material._id} 
                                     id={material._id}
@@ -167,5 +186,18 @@ export default function StorePage() {
 
             </div>
         </div>
+    );
+}
+
+export default function StorePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+                <Loader2 className="w-12 h-12 text-pink-500 animate-spin mb-4" />
+                <p className="text-gray-500 font-medium animate-pulse">Loading Store...</p>
+            </div>
+        }>
+            <StoreContent />
+        </Suspense>
     );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, BookOpen, Settings } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Settings, Tag } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -26,6 +26,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </Link>
                     <Link href="/admin/materials" className={linkClass("/admin/materials")}>
                         <BookOpen className="w-5 h-5" /> Course Mgt.
+                    </Link>
+                    <Link href="/admin/coupons" className={linkClass("/admin/coupons")}>
+                        <Tag className="w-5 h-5" /> Promo Codes
                     </Link>
                     <Link href="/admin/users" className={linkClass("/admin/users")}>
                         <Users className="w-5 h-5" /> User Mgt.
