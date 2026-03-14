@@ -33,6 +33,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link href="/admin/users" className={linkClass("/admin/users")}>
                         <Users className="w-5 h-5" /> User Mgt.
                     </Link>
+                    <div className="my-2 border-t border-gray-100"></div>
+                    <Link href="/admin/profile" className={linkClass("/admin/profile")}>
+                        <Settings className="w-5 h-5" /> Admin Profile
+                    </Link>
                 </nav>
             </aside>
 

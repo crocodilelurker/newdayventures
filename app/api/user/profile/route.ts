@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
+import { Admin } from "@/lib/models/Admin";
 import bcrypt from "bcryptjs";
 
 export async function PUT(req: Request) {
@@ -13,18 +14,22 @@ export async function PUT(req: Request) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        const { name, currentPassword, newPassword } = await req.json();
+        const { name, email, currentPassword, newPassword } = await req.json();
+        const userId = (session.user as any).id;
+        const userRole = (session.user as any).role;
 
         await connectDB();
-
-        
-        const dbUser = await User.findById((session.user as any).id).select("+password");
+        let dbUser: any;
+        if (userRole === "admin") {
+            dbUser = await Admin.findById(userId).select("+password");
+        } else {
+            dbUser = await User.findById(userId).select("+password");
+        }
 
         if (!dbUser) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        
         if (currentPassword && newPassword) {
             if (!dbUser.password) {
                 return NextResponse.json({ message: "User has no password set" }, { status: 400 });
@@ -44,7 +49,20 @@ export async function PUT(req: Request) {
             dbUser.password = await bcrypt.hash(newPassword, salt);
         }
 
-        
+        if (email && email.trim() !== "") {
+            let existingUser;
+            if (userRole === "admin") {
+                existingUser = await Admin.findOne({ email: email.trim(), _id: { $ne: dbUser._id } });
+            } else {
+                existingUser = await User.findOne({ email: email.trim(), _id: { $ne: dbUser._id } });
+            }
+
+            if (existingUser) {
+                return NextResponse.json({ message: "Email is already in use by another account" }, { status: 400 });
+            }
+            dbUser.email = email.trim();
+        }
+
         if (name && name.trim() !== "") {
             dbUser.name = name.trim();
         }
