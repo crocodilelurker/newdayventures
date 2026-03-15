@@ -14,6 +14,10 @@ const UserSchema = new Schema<IUser>(
         name: {
             type: String,
             required: [true, 'Please provide a name'],
+            match: [
+                /^[a-zA-Z\s]*$/,
+                'Please provide a valid name without special characters',
+            ],
         },
         email: {
             type: String,

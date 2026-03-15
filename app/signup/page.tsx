@@ -16,18 +16,37 @@ export default function SignUpPage() {
     const { showToast } = useToast();
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password.length < 6) {
             showToast("Password must be at least 6 characters", "error");
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ name, email, password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showToast(data.message || "Registration failed", "error");
+                return;
+            }
+
             showToast("Account created successfully!", "success");
-            router.push("/");
-        }, 1500);
+            router.push("/login");
+        } catch (error) {
+            showToast("An error occurred during registration", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -90,7 +109,7 @@ export default function SignUpPage() {
                                 required
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z\s]/g, ""))}
                                 placeholder="John Doe"
                                 className="w-full border border-gray-300 rounded-lg pl-11 pr-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all bg-white"
                             />
